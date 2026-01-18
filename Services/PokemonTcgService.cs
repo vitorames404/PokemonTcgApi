@@ -22,9 +22,37 @@ namespace PokemonTcgApi.Services
             response.EnsureSuccessStatusCode();
 
             string json = await response.Content.ReadAsStringAsync();
-            var result = JsonSerializer.Deserialize<PokemonCardSearchResponseDto>(json);
+            var result = JsonSerializer.Deserialize<PokemonCardSearchResponseDto>(json, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
 
-            return result;
+            return result ?? new PokemonCardSearchResponseDto { Data = new List<PokemonCardDto>() };
+        }
+
+        public async Task<CardMarketResponseDto?> GetCardMarketPricesByName(string name)
+        {
+            var encodedName = Uri.EscapeDataString(name);
+            var url = $"https://api.cardmarket.com/v2/products?search={encodedName}&idLanguage=1&exact=false";
+
+            var response = await _httpClient.GetAsync(url);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                // If 404 or other error, return empty result instead of throwing
+                return new CardMarketResponseDto
+                {
+                    Product = new List<CardMarketProductDto>()
+                };
+            }
+
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<CardMarketResponseDto>(json, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            return result ?? new CardMarketResponseDto { Product = new List<CardMarketProductDto>() };
         }
 
     }
