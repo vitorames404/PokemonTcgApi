@@ -1,33 +1,60 @@
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using PokemonTcgApi.Data;
 using PokemonTcgApi.DTOs;
+using PokemonTcgApi.Models;
 
 namespace PokemonTcgApi.Services
-{        
+{
     public class PokemonTcgService
     {
         private readonly HttpClient _httpClient;
+        private readonly ApplicationDbContext _context;
 
-        public PokemonTcgService(HttpClient httpClient)
+        public PokemonTcgService(HttpClient httpClient, ApplicationDbContext context)
         {
             _httpClient = httpClient;
+            _context = context;
         }
 
         // Method to search the cards by name.
         public async Task<PokemonCardSearchResponseDto> SearchCardsByName(string name)
         {
-            string url = $"https://api.pokemontcg.io/v2/cards?q=name:{name}";
-
-            // Use the HttpClient private class to make the request, using the url as parameter
-            var response = await _httpClient.GetAsync(url);
-            response.EnsureSuccessStatusCode();
-
-            string json = await response.Content.ReadAsStringAsync();
-            var result = JsonSerializer.Deserialize<PokemonCardSearchResponseDto>(json, new JsonSerializerOptions
+            try
             {
-                PropertyNameCaseInsensitive = true
-            });
+                string url = $"https://api.pokemontcg.io/v2/cards?q=name:{name}";
 
-            return result ?? new PokemonCardSearchResponseDto { Data = new List<PokemonCardDto>() };
+                // Set timeout for the request
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                var response = await _httpClient.GetAsync(url, cts.Token);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    // Log the error status code and return empty result
+                    Console.WriteLine($"Pokemon TCG API error: {response.StatusCode}");
+                    return new PokemonCardSearchResponseDto { Data = new List<PokemonCardDto>() };
+                }
+
+                string json = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<PokemonCardSearchResponseDto>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                return result ?? new PokemonCardSearchResponseDto { Data = new List<PokemonCardDto>() };
+            }
+            catch (TaskCanceledException)
+            {
+                // Timeout occurred
+                Console.WriteLine("Pokemon TCG API request timed out");
+                return new PokemonCardSearchResponseDto { Data = new List<PokemonCardDto>() };
+            }
+            catch (Exception ex)
+            {
+                // Any other error
+                Console.WriteLine($"Error calling Pokemon TCG API: {ex.Message}");
+                return new PokemonCardSearchResponseDto { Data = new List<PokemonCardDto>() };
+            }
         }
 
         public async Task<CardMarketResponseDto?> GetCardMarketPricesByName(string name)
@@ -53,6 +80,43 @@ namespace PokemonTcgApi.Services
             });
 
             return result ?? new CardMarketResponseDto { Product = new List<CardMarketProductDto>() };
+        }
+
+        // Save current price to history
+        public async Task SavePriceToHistory(string cardId, decimal price, string source)
+        {
+            var priceHistory = new PriceHistory
+            {
+                CardId = cardId,
+                Price = price,
+                RecordedAt = DateTime.UtcNow,
+                Source = source
+            };
+
+            _context.PriceHistories.Add(priceHistory);
+            await _context.SaveChangesAsync();
+        }
+
+        // Get price history for a specific card
+        public async Task<List<PriceHistory>> GetPriceHistory(string cardId)
+        {
+            return await _context.PriceHistories
+                .Where(ph => ph.CardId == cardId)
+                .OrderBy(ph => ph.RecordedAt)
+                .ToListAsync();
+        }
+
+        // Get price history grouped by source (for graphing multiple price sources)
+        public async Task<Dictionary<string, List<PriceHistory>>> GetPriceHistoryBySource(string cardId)
+        {
+            var history = await _context.PriceHistories
+                .Where(ph => ph.CardId == cardId)
+                .OrderBy(ph => ph.RecordedAt)
+                .ToListAsync();
+
+            return history
+                .GroupBy(ph => ph.Source)
+                .ToDictionary(g => g.Key, g => g.ToList());
         }
 
     }

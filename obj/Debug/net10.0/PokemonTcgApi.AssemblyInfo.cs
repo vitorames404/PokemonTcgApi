@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PokemonTcgApi")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+dac0b14893e18ce19b1b1c3b45c1c4e10ac8624f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+71c526c55d5b93f46b394a245fdcf53b86cff875")]
 [assembly: System.Reflection.AssemblyProductAttribute("PokemonTcgApi")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PokemonTcgApi")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

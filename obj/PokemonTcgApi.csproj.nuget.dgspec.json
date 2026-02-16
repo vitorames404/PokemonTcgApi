@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\yipnear\\Desktop\\PokemonTcgApi\\PokemonTcgApi.csproj": {}
+    "c:\\Users\\yipnear\\Desktop\\PokemonTcgApi\\PokemonTcgApi.csproj": {}
   },
   "projects": {
-    "C:\\Users\\yipnear\\Desktop\\PokemonTcgApi\\PokemonTcgApi.csproj": {
+    "c:\\Users\\yipnear\\Desktop\\PokemonTcgApi\\PokemonTcgApi.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\yipnear\\Desktop\\PokemonTcgApi\\PokemonTcgApi.csproj",
+        "projectUniqueName": "c:\\Users\\yipnear\\Desktop\\PokemonTcgApi\\PokemonTcgApi.csproj",
         "projectName": "PokemonTcgApi",
-        "projectPath": "C:\\Users\\yipnear\\Desktop\\PokemonTcgApi\\PokemonTcgApi.csproj",
+        "projectPath": "c:\\Users\\yipnear\\Desktop\\PokemonTcgApi\\PokemonTcgApi.csproj",
         "packagesPath": "C:\\Users\\yipnear\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\yipnear\\Desktop\\PokemonTcgApi\\obj\\",
+        "outputPath": "c:\\Users\\yipnear\\Desktop\\PokemonTcgApi\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\yipnear\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -67,6 +67,10 @@
               "suppressParent": "All",
               "target": "Package",
               "version": "[10.0.2, )"
+            },
+            "Swashbuckle.AspNetCore": {
+              "target": "Package",
+              "version": "[10.1.3, )"
             }
           },
           "imports": [
