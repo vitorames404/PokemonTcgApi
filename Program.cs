@@ -21,6 +21,13 @@ builder.Services.AddHttpClient<PokemonTcgService>(client =>
 });
 builder.Services.AddScoped<PokemonTcgService>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAngular", builder => builder.WithOrigins("http://localhost:4200")
+                         .AllowAnyMethod()
+                         .AllowAnyHeader());
+});
+
 var app = builder.Build();
 
 // Configure Swagger UI

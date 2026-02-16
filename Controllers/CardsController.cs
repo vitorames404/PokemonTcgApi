@@ -47,6 +47,16 @@ namespace PokemonTcgApi.Controllers
             {
                 var history = await _tcgService.GetPriceHistory(card.Id);
 
+                // Extract current market price from TCGPlayer data (first variant's market price)
+                decimal? currentPrice = card.Tcgplayer?.Prices?.Values
+                    .FirstOrDefault()?.Market;
+
+                // Fall back to most recent price from history if TCGPlayer price not available
+                if (!currentPrice.HasValue)
+                {
+                    currentPrice = history.OrderByDescending(h => h.RecordedAt).FirstOrDefault()?.Price;
+                }
+
                 var cardWithHistory = new CardWithPriceHistoryDto
                 {
                     Id = card.Id,
@@ -55,7 +65,7 @@ namespace PokemonTcgApi.Controllers
                     Images = card.Images,
                     Set = card.Set,
                     Rarity = card.Rarity,
-                    CurrentPrice = history.OrderByDescending(h => h.RecordedAt).FirstOrDefault()?.Price,
+                    CurrentPrice = currentPrice,
                     PriceHistory = history.Select(h => new PriceHistoryDto
                     {
                         RecordedAt = h.RecordedAt,
