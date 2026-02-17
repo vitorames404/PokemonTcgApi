@@ -24,8 +24,8 @@ namespace PokemonTcgApi.Services
             {
                 string url = $"https://api.pokemontcg.io/v2/cards?q=name:{name}";
 
-                // Set timeout for the request
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                // Set timeout for the request (60 seconds)
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
                 var response = await _httpClient.GetAsync(url, cts.Token);
 
                 if (!response.IsSuccessStatusCode)

@@ -15,9 +15,18 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Register HttpClient for external API calls with timeout configuration
-builder.Services.AddHttpClient<PokemonTcgService>(client =>
+builder.Services.AddHttpClient<PokemonTcgService>((serviceProvider, client) =>
 {
-    client.Timeout = TimeSpan.FromSeconds(30); // 30 second timeout for all requests
+    var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+    var apiKey = configuration["PokemonTcgApi:ApiKey"];
+
+    client.Timeout = TimeSpan.FromSeconds(30);
+
+    // Add API key to default headers if configured
+    if (!string.IsNullOrEmpty(apiKey) && apiKey != "YOUR_API_KEY_HERE")
+    {
+        client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
+    }
 });
 builder.Services.AddScoped<PokemonTcgService>();
 
