@@ -17,69 +17,42 @@ namespace PokemonTcgApi.Services
             _context = context;
         }
 
-        // Method to search the cards by name.
+        // Search cards by name via RapidAPI
         public async Task<PokemonCardSearchResponseDto> SearchCardsByName(string name)
         {
             try
             {
-                string url = $"https://api.pokemontcg.io/v2/cards?q=name:{name}";
+                string encodedName = Uri.EscapeDataString(name);
+                string url = $"https://pokemon-tcg-api.p.rapidapi.com/cards?name={encodedName}&page=1&per_page=20";
 
-                // Set timeout for the request (60 seconds)
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
                 var response = await _httpClient.GetAsync(url, cts.Token);
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    // Log the error status code and return empty result
                     Console.WriteLine($"Pokemon TCG API error: {response.StatusCode}");
-                    return new PokemonCardSearchResponseDto { Data = new List<PokemonCardDto>() };
+                    return new PokemonCardSearchResponseDto();
                 }
 
                 string json = await response.Content.ReadAsStringAsync();
+
                 var result = JsonSerializer.Deserialize<PokemonCardSearchResponseDto>(json, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 });
 
-                return result ?? new PokemonCardSearchResponseDto { Data = new List<PokemonCardDto>() };
+                return result ?? new PokemonCardSearchResponseDto();
             }
             catch (TaskCanceledException)
             {
-                // Timeout occurred
                 Console.WriteLine("Pokemon TCG API request timed out");
-                return new PokemonCardSearchResponseDto { Data = new List<PokemonCardDto>() };
+                return new PokemonCardSearchResponseDto();
             }
             catch (Exception ex)
             {
-                // Any other error
                 Console.WriteLine($"Error calling Pokemon TCG API: {ex.Message}");
-                return new PokemonCardSearchResponseDto { Data = new List<PokemonCardDto>() };
+                return new PokemonCardSearchResponseDto();
             }
-        }
-
-        public async Task<CardMarketResponseDto?> GetCardMarketPricesByName(string name)
-        {
-            var encodedName = Uri.EscapeDataString(name);
-            var url = $"https://api.cardmarket.com/v2/products?search={encodedName}&idLanguage=1&exact=false";
-
-            var response = await _httpClient.GetAsync(url);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                // If 404 or other error, return empty result instead of throwing
-                return new CardMarketResponseDto
-                {
-                    Product = new List<CardMarketProductDto>()
-                };
-            }
-
-            var json = await response.Content.ReadAsStringAsync();
-            var result = JsonSerializer.Deserialize<CardMarketResponseDto>(json, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
-
-            return result ?? new CardMarketResponseDto { Product = new List<CardMarketProductDto>() };
         }
 
         // Save current price to history

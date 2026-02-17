@@ -27,45 +27,61 @@ namespace PokemonTcgApi.Controllers
         }
 
         // GET: /api/cards/search-with-history?name=charizard
-        // Enhanced endpoint: returns cards with their price history for graphing
+        // Main endpoint for frontend: returns cards with art, details, and price history
         [HttpGet("search-with-history")]
         public async Task<IActionResult> SearchCardsWithHistory([FromQuery] string name)
         {
             if (string.IsNullOrWhiteSpace(name))
                 return BadRequest("Query parameter 'name' is required.");
 
-            // Get cards from external API
             var searchResult = await _tcgService.SearchCardsByName(name);
 
             if (searchResult?.Data == null || !searchResult.Data.Any())
                 return Ok(new { data = new List<CardWithPriceHistoryDto>() });
 
-            // For each card, fetch its price history from database
             var cardsWithHistory = new List<CardWithPriceHistoryDto>();
 
             foreach (var card in searchResult.Data)
             {
-                var history = await _tcgService.GetPriceHistory(card.Id);
+                var cardId = card.Id.ToString();
+                var history = await _tcgService.GetPriceHistory(cardId);
 
-                // Extract current market price from TCGPlayer data (first variant's market price)
-                decimal? currentPrice = card.Tcgplayer?.Prices?.Values
-                    .FirstOrDefault()?.Market;
+                // Extract current price from API response
+                decimal? currentPrice = null;
+                string? currency = null;
 
-                // Fall back to most recent price from history if TCGPlayer price not available
-                if (!currentPrice.HasValue)
+                if (card.Prices?.Cardmarket?.Lowest_Near_Mint.HasValue == true)
                 {
-                    currentPrice = history.OrderByDescending(h => h.RecordedAt).FirstOrDefault()?.Price;
+                    currentPrice = card.Prices.Cardmarket.Lowest_Near_Mint;
+                    currency = card.Prices.Cardmarket.Currency ?? "EUR";
+                }
+                else if (card.Prices?.Tcg_Player?.Lowest_Near_Mint.HasValue == true)
+                {
+                    currentPrice = card.Prices.Tcg_Player.Lowest_Near_Mint;
+                    currency = card.Prices.Tcg_Player.Currency ?? "USD";
+                }
+
+                // Auto-save current price to history for future graphing
+                if (currentPrice.HasValue && currentPrice > 0)
+                {
+                    string source = currency == "EUR" ? "CardMarket" : "TCGPlayer";
+                    await _tcgService.SavePriceToHistory(cardId, currentPrice.Value, source);
                 }
 
                 var cardWithHistory = new CardWithPriceHistoryDto
                 {
-                    Id = card.Id,
+                    Id = cardId,
                     Name = card.Name,
                     Supertype = card.Supertype,
-                    Images = card.Images,
-                    Set = card.Set,
                     Rarity = card.Rarity,
+                    Hp = card.Hp,
+                    Image = card.Image,
+                    Artist = card.Artist?.Name,
+                    EpisodeName = card.Episode?.Name,
+                    EpisodeCode = card.Episode?.Code,
+                    Tcgid = card.Tcgid,
                     CurrentPrice = currentPrice,
+                    PriceCurrency = currency,
                     PriceHistory = history.Select(h => new PriceHistoryDto
                     {
                         RecordedAt = h.RecordedAt,
@@ -78,17 +94,6 @@ namespace PokemonTcgApi.Controllers
             }
 
             return Ok(new { data = cardsWithHistory });
-        }
-
-        // GET: /api/cards/prices?name=charizard
-        [HttpGet("prices")]
-        public async Task<IActionResult> GetPrices([FromQuery] string name)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-                return BadRequest("Query parameter 'name' is required.");
-
-            var result = await _tcgService.GetCardMarketPricesByName(name);
-            return Ok(result);
         }
 
         // POST: /api/cards/{cardId}/price-history

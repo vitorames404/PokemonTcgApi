@@ -2,10 +2,15 @@ namespace PokemonTcgApi.DTOs
 {
     public class PokemonCardSearchResponseDto
     {
-        public List<PokemonCardDto> Data { get; set; }
-        public int Page { get; set; }
-        public int PageSize { get; set; }
-        public int Count { get; set; }
-        public int TotalCount { get; set; }
+        public List<PokemonCardDto> Data { get; set; } = new();
+        public PagingDto? Paging { get; set; }
+        public int Results { get; set; }
+    }
+
+    public class PagingDto
+    {
+        public int Current { get; set; }
+        public int Total { get; set; }
+        public int Per_Page { get; set; }
     }
 }

@@ -4,8 +4,7 @@ using PokemonTcgApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+// Add services
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
@@ -18,17 +17,16 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddHttpClient<PokemonTcgService>((serviceProvider, client) =>
 {
     var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-    var apiKey = configuration["PokemonTcgApi:ApiKey"];
+    var rapidApiKey = configuration["PokemonTcgApi:RapidApiKey"];
+    var rapidApiHost = configuration["PokemonTcgApi:RapidApiHost"];
 
     client.Timeout = TimeSpan.FromSeconds(30);
 
-    // Add API key to default headers if configured
-    if (!string.IsNullOrEmpty(apiKey) && apiKey != "YOUR_API_KEY_HERE")
-    {
-        client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
-    }
+    if (!string.IsNullOrEmpty(rapidApiKey))
+        client.DefaultRequestHeaders.Add("X-RapidAPI-Key", rapidApiKey);
+    if (!string.IsNullOrEmpty(rapidApiHost))
+        client.DefaultRequestHeaders.Add("X-RapidAPI-Host", rapidApiHost);
 });
-builder.Services.AddScoped<PokemonTcgService>();
 
 builder.Services.AddCors(options =>
 {
@@ -50,6 +48,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowAngular");
 
 app.MapControllers();
 
